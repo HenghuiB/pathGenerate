@@ -168,19 +168,25 @@ def rotate(n):
 
    newL = []
    for i in l:
-      if abs(i[1] - 0) < 1e-2:
+      if abs(i[1] - 0) < 1e-1 or abs(i[1] -360) < 1e-1:
          continue
       else:
          newL.append(i)
 
    for i in newL:
-      for q in range(int(i[0]), n):
+      image = cv2.imread('./picture/clip/frame' + str(int(i[0])) + '.png')
+      image = cv2.copyMakeBorder(image, 300, 300, 300, 300, borderType=cv2.BORDER_CONSTANT, value=(255, 255, 255, 0))
+      (h, w) = image.shape[:2]
+      (cX, cY) = (w // 2, h // 2)
+      if i[1] > 180:
+         i[1] = i[1] - 360
+      for t in range(10):
+         M = cv2.getRotationMatrix2D((cX, cY), -int(i[1]/10*(t+1)), 1.0)
+         rotated = cv2.warpAffine(image, M, (w, h))
+         cv2.imwrite('./picture/clip/rotate/frame' + str(int(i[0]))+'.'+str(t)+ '.png', rotated[cY - 300:cY + 300, cX - 300:cX + 300])
+      for q in range(int(i[0])+1, n):
          try:
             image = cv2.imread('./picture/clip/frame' + str(q) + '.png')
-            # if i == newL[0]:
-            #    image = cv2.imread('./picture/clip/frame' + str(q) + '.png')
-            # else:
-            #    image = cv2.imread('./picture/clip/rotate/frame' + str(q) + '.png')
             (h, w) = image.shape[:2]
             (cX, cY) = (w // 2, h // 2)
             M = cv2.getRotationMatrix2D((cX, cY), -int(i[1]), 1.0)
@@ -188,14 +194,20 @@ def rotate(n):
             cv2.imwrite('./picture/clip/frame' + str(q) + '.png', rotated)
          except:
             continue
+   return newL
 
-rotate(frm)
+stored=rotate(frm)
+frmList=[i[0] for i in stored]
 
 def toGif(n):
    imgs = []
    for i in range(1, n):
       try:
-         imgs.append(imageio.v2.imread("./picture/clip/frame"+str(i)+".png"))
+         if i in frmList:
+            for q in range(10):
+               imgs.append(imageio.v2.imread('./picture/clip/rotate/frame' + str(i)+'.'+str(q)+ '.png'))
+         else:
+            imgs.append(imageio.v2.imread("./picture/clip/frame"+str(i)+".png"))
       except:
          continue
    output_name = "car.gif"
